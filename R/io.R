@@ -1,4 +1,4 @@
-read.data <- function(RUNdir,MDFdir){ 
+read.data <- function(RUNdir,MDFdir,addnames=FALSE){ 
     out <- list()
     fnames <- Sys.glob(file.path(RUNdir,"*.RUN"))
     for (fn in fnames){
@@ -13,6 +13,7 @@ read.data <- function(RUNdir,MDFdir){
         out[[mname]] <- meas
         close(con)
     }
+    if (addnames) out <- add.names(RUNdir,out)
     class(out) <- 'Noblesse'
     out
 }
@@ -52,6 +53,9 @@ read.mdf <- function(con,MDFdir){
             out$zero <- rbind(out$zero,txt)
         }
     }
+    block <- readLines(MDFcon,n=3)
+    out$numzeros <- as.numeric(block[[2]][1])
+    out$numblocks <- as.numeric(block[[3]][1])
     close(MDFcon)
     out
 }
@@ -73,6 +77,17 @@ read.signal <- function(con){
             out[[hop]] <- NULL
         }
         out[[hop]] <- rbind(out[[hop]],as.numeric(txt[-nt]))
+    }
+    out
+}
+
+add.names <- function(RUNdir,dat){
+    out <- dat
+    nd <- length(out)
+    aux <- read.csv(file.path(RUNdir,'names.csv'),as.is=TRUE)
+    for (i in 1:nd){
+        j <- which(aux[,'run'] %in% names(out)[i])
+        out[[i]]$name <- aux[j,'comment']
     }
     out
 }
