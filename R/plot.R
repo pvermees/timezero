@@ -23,3 +23,20 @@ plot.Noblesse <- function(x,run=1,show.zeros=TRUE){
     mtext(tit, side=3, line=1.75, outer=TRUE)
     mtext(dat[[run]]$mdf$name, side=3, line=0.25, outer=TRUE)
 }
+
+plot.drift <- function(dc,run=1){
+    meas <- dc[[run]]
+    oldpar <- par(mfrow=c(2,2),mar=c(4,3.5,1,1),oma=c(0,0,3,0),mgp=c(2,1,0))
+    on.exit(par(oldpar))
+    FAR <- (meas$detectors %in% 'F')
+    for (i in 1:ncol(meas$tim)){
+        z <- ifelse(FAR[i],meas$ZF,meas$ZC)
+        plot(x=meas$tim[,i],y=meas$sig[,i]-z,pch=16,
+             xlab='t(s)',ylab=meas$labels[i])
+        g <- meas$groups[i]
+        b <- meas$alpha[i] + meas$gamma[g]*hours(meas$tim[,i])
+        pred <- (z + exp(b))/ifelse(FAR[i],1,meas$dwell[i])
+        lines(x=meas$tim[,i],y=pred)
+    }
+    mtext(meas$name,side=3,line=1,outer=TRUE)
+}
