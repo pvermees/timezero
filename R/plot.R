@@ -35,7 +35,7 @@ plot.drift <- function(dc,run=1){
              xlab='t(s)',ylab=meas$labels[i])
         g <- meas$groups[i]
         b <- meas$alpha[i] + meas$gamma[g]*hours(meas$tim[,i])
-        pred <- (z + exp(b))/ifelse(FAR[i],1,meas$dwell[i])
+        pred <- exp(b)/ifelse(FAR[i],1,meas$dwell[i])
         lines(x=meas$tim[,i],y=pred)
     }
     mtext(meas$name,side=3,line=1,outer=TRUE)

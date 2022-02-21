@@ -48,15 +48,16 @@ LL.drift <- function(p,meas){
         g <- meas$groups[i]
         if (FAR[i]){
             pred <- meas$ZF + exp(alpha[i] + gamma[g]*hours(meas$tim[,i]))
-            out <- out + sum((pred - meas$sig[,i])^2)
+            misfit <- pred - meas$sig[,i]
+            out <- out - sum(misfit^2)/var(misfit)
         }
         if (SEM[i]){
             pred <- meas$ZC + exp(alpha[i] + gamma[g]*hours(meas$tim[,i]))
             obs <- round(meas$sig[,i] * meas$dwell[i])
-            out <- out + sum(dpois(x=obs,lambda=pred,log=TRUE))
+            out <- out - sum(dpois(x=obs,lambda=pred,log=TRUE))
         }
     }
-    -out
+    out
 }
 
 hours <- function(tt){
