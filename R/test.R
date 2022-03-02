@@ -55,6 +55,7 @@ average.blocks <- function(meas){
     out$ZC <- ZC
     out$tim <- tim
     out$sig <- sig
+    out$zdwell <- as.numeric(meas$mdf$zero[,5])
     out$dwell <- as.numeric(meas$mdf$cycle[,5])
     out$name <- meas$name
     out

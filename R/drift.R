@@ -13,7 +13,10 @@ zero <- function(adat){
         for (i in SEM){
             sig[,i] <- sig[,i] - meas$ZC
         }
-        out[[nm]] <- list(tim=meas$tim,sig=sig,FAR=FAR,SEM=SEM)
+        out[[nm]] <- meas
+        out[[nm]]$sig <- sig
+        out[[nm]]$FAR <- FAR
+        out[[nm]]$SEM <- SEM
     }
     out
 }
