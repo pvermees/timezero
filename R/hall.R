@@ -22,22 +22,69 @@ init.hall <- function(zdat,i){
     c(a,g,k)
 }
 
-misfit.hall <- function(par,zdat,i,j){
-    meas <- zdat[[i]]
-    a <- par[1]
-    g <- par[2]
-    k <- par[3]
-    tt <- hours(meas$tim[,j])
-    obs <- meas$sig[,j]
-    pred <- hall(a,g,k,tt)
-    if (j %in% meas$FAR){
-        out <- sum((obs - pred)^2)
-    } else {
-        O <- round((obs*meas$dwell[j] + meas$ZC*meas$zdwell))
-        E <- pred*meas$dwell[j] + meas$ZC*meas$zdwell
-        size <- sum(O)
-        prob <- E/sum(E)
-        out <- -sum(dpois(O,lambda=E,log=TRUE))
+misfit.hall <- function(par,zdat,j){
+    n <- length(j)
+    a <- par[1:n]
+    g <- par[n+1]
+    k <- par[(n+2):(2*n+1)]
+    out <- 0
+    for (i in 1:n){
+        jj <- j[i]
+        tt <- hours(zdat$tim[,jj])
+        obs <- zdat$sig[,jj]
+        pred <- hall(a[i],g,k[i],tt)
+        if (jj %in% zdat$FAR){
+            out <- sum((obs - pred)^2)
+        } else {
+            O <- round((obs*zdat$dwell[jj] + zdat$ZC*zdat$zdwell))
+            E <- pred*zdat$dwell[jj] + zdat$ZC*zdat$zdwell
+            size <- sum(O)
+            prob <- E/sum(E)
+            out <- out - sum(dpois(O,lambda=E,log=TRUE))
+        }
     }
     out
+}
+
+hallfit <- function(zdat){
+    groups <- unique(zdat$groups)
+    out <- zdat
+    out$agk <- list()
+    class(out) <- 'hall'
+    for (g in groups){
+        j <- which(zdat$groups %in% g)
+        n <- length(j)
+        agk <- NULL
+        for (jj in j){
+            agk <- rbind(agk,init.hall(zdat,jj))
+        }
+        init <- c(agk[,1],agk[1,2],agk[,3])
+        lower <- c(init[1:n]-1,init[n+1]-1,init[(n+2):(2*n+1)]/2)
+        upper <- c(init[1:n]+1,init[n+1]+1,init[(n+2):(2*n+1)]*2)
+        out$agk[[g]] <- optim(init,misfit.hall,method='L-BFGS-B',
+                              lower=lower,upper=upper,zdat=zdat,j=j)$par
+    }
+    out
+}
+
+plot.hall <- function(zdat){
+    n <- length(zdat$codes)
+    nr <- ceiling(sqrt(n))
+    nc <- ceiling(n/nr)
+    oldpar <- par(mfrow=c(nr,nc))
+    on.exit(par(oldpar))
+    groups <- unique(zdat$groups)
+    for (g in groups){
+        agk <- zdat$agk[[g]]
+        j <- which(zdat$groups %in% g)
+        nj <- length(j)
+        for (i in 1:nj){
+            jj <- j[i]
+            tt <- hours(zdat$tim[,jj])
+            pred <- hall(agk[i],agk[nj+1],agk[nj+1+i],tt)
+            obs <- zdat$sig[,jj]
+            plot(tt,obs,ylab='y')
+            lines(tt,pred)
+        }
+    }
 }
