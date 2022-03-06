@@ -37,7 +37,7 @@ misfit.hall <- function(par,zdat,i,j){
         E <- pred*meas$dwell[j] + meas$ZC*meas$zdwell
         size <- sum(O)
         prob <- E/sum(E)
-        out <- -dmultinom(O,size=size,prob=prob,log=TRUE)
+        out <- -sum(dpois(O,lambda=E,log=TRUE))
     }
     out
 }
