@@ -48,7 +48,7 @@ misfit.hall <- function(par,zdat,j,outliers=NULL){
         obs <- sig[,jj]
         pred <- hall(a[i],g,k[i],tt)
         if (jj %in% zdat$FAR){
-            out <- sum((obs - pred)^2)
+            out <- out - sum(dnorm(x=obs,mean=pred,sd=sd(obs-pred),log=TRUE))
         } else {
             O <- round((obs*zdat$dwell[jj] + zdat$ZC*zdat$zdwell))
             E <- pred*zdat$dwell[jj] + zdat$ZC*zdat$zdwell
@@ -64,15 +64,19 @@ hallfit <- function(zdat,outliers=NULL){
     out <- zdat
     class(out) <- 'hall'
     out$agk <- list()
+    out$cov <- list()
     n <- length(zdat$codes)
     for (j in 1:n){
         init <- init.hall(zdat,j,outliers=outliers)
         lower <- c(init[1]-1,init[2]-1,init[3]/2)
         upper <- c(init[1]+1,init[2]+1,init[3]*2)
         code <- zdat$codes[j]
-        out$agk[[code]] <- optim(init,misfit.hall,method='L-BFGS-B',
-                                 lower=lower,upper=upper,
-                                 zdat=zdat,j=j,outliers=outliers)$par
+        fit <- optim(init,misfit.hall,method='L-BFGS-B',
+                     lower=lower,upper=upper,
+                     zdat=zdat,j=j,outliers=outliers,
+                     hessian=TRUE)
+        out$agk[[code]] <- fit$par
+        out$cov[[code]] <- solve(fit$hessian)
     }
     out
 }
@@ -87,7 +91,6 @@ plot.hall <- function(zdat){
         tt <- hours(zdat$tim[,j])
         pred <- hall(agk[1],agk[2],agk[3],tt)
         obs <- zdat$sig[,j]
-        plot(tt,obs,ylab='y')
         lines(tt,pred)
     }
 }
