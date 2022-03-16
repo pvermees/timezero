@@ -76,7 +76,7 @@ hallfit <- function(zdat,outliers=NULL){
                      zdat=zdat,j=j,outliers=outliers,
                      hessian=TRUE)
         out$agk[[code]] <- fit$par
-        out$cov[[code]] <- solve(fit$hessian)
+        out$cov[[code]] <- MASS::ginv(fit$hessian)
     }
     out
 }
@@ -91,6 +91,7 @@ plot.hall <- function(zdat){
         tt <- hours(zdat$tim[,j])
         pred <- hall(agk[1],agk[2],agk[3],tt)
         obs <- zdat$sig[,j]
+        plot(tt,obs)
         lines(tt,pred)
     }
 }
