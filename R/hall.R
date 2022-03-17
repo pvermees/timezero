@@ -76,7 +76,7 @@ hallfit <- function(zdat,outliers=NULL){
                      zdat=zdat,j=j,outliers=outliers,
                      hessian=TRUE)
         out$agk[[code]] <- fit$par
-        out$cov[[code]] <- MASS::ginv(fit$hessian)
+        out$cov[[code]] <- solve(IsoplotR:::nearPD(fit$hessian))
     }
     out
 }
@@ -136,4 +136,24 @@ plot.halljoint <- function(zdat){
             lines(tt,pred)
         }
     }
+}
+
+hallall <- function(zdat,outliers){
+    nms <- names(zdat)
+    tab <- data.frame()
+    err <- data.frame()
+    for (i in seq_along(zdat)){
+        if (nms[i] %in% names(outliers)){
+            fit <- hallfit(zdat[[i]],outliers=outliers[[nms[i]]])
+        } else {
+            fit <- hallfit(zdat[[i]])
+        }
+        for (j in seq_along(fit$codes)){
+            lab <- fit$labels[j]
+            tab[i,lab] <- fit$agk[[j]][1]
+            err[i,lab] <- sqrt(fit$cov[[j]][1,1])
+        }
+    }
+    rownames(tab) <- rownames(err) <- names(zdat)
+    list(tab=tab,err=err)
 }
